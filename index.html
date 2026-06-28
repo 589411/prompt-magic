@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>魔法詠唱產生器｜親子共學 AI 生圖</title>
+    <meta
+      name="description"
+      content="親子一起填空、詠唱出完整的 AI 生圖提示詞。支援可愛風與遊戲科幻風，還能上傳照片讓 AI 建議改造詠唱。"
+    />
+    <meta property="og:title" content="魔法詠唱產生器｜親子共學 AI 生圖" />
+    <meta property="og:description" content="填空就能詠唱出完整提示詞，貼到 Gemini / ChatGPT 就能變出畫面。" />
+    <meta property="og:type" content="website" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark">✨</span>
+        <span>
+          <strong>魔法詠唱產生器</strong>
+          <small>親子共學 AI 生圖 · 未來魔法學院</small>
+        </span>
+      </div>
+      <div class="age-switch" role="tablist" aria-label="選擇風格年齡">
+        <button class="age-btn is-active" data-age="kid" role="tab" aria-selected="true">🧸 小小孩・可愛風</button>
+        <button class="age-btn" data-age="teen" role="tab" aria-selected="false">🚀 大小孩・遊戲科幻</button>
+      </div>
+    </header>
+
+    <main>
+      <p class="intro">
+        和孩子一起<strong>填空</strong>，按下「開始詠唱」，AI 會幫你把想法變成一段完整、漂亮的生圖提示詞。
+        把詠唱<strong>複製</strong>，貼到 Gemini、ChatGPT 或 Copilot，就能變出畫面！
+      </p>
+
+      <!-- 區塊一：填空式詠唱建構 -->
+      <section class="card builder">
+        <h2><span class="step">1</span> 填空：說清楚你想要的畫面</h2>
+
+        <div class="field">
+          <label for="subject">🦸 誰是主角？</label>
+          <input id="subject" type="text" placeholder="例如：我家的橘貓、戴斗篷的小英雄、全家人" />
+          <div class="chips" data-target="subject"></div>
+        </div>
+
+        <div class="field">
+          <label for="action">🎬 主角在做什麼？</label>
+          <input id="action" type="text" placeholder="例如：在發射魔法、開心地飛起來、一起野餐" />
+          <div class="chips" data-target="action"></div>
+        </div>
+
+        <div class="field">
+          <label for="place">🗺️ 在哪裡？</label>
+          <input id="place" type="text" placeholder="例如：星空下的城堡、未來城市、奶奶家的院子" />
+          <div class="chips" data-target="place"></div>
+        </div>
+
+        <div class="field">
+          <label>🎨 想要什麼風格？<small>（點一個）</small></label>
+          <div class="chips single" data-target="style"></div>
+        </div>
+
+        <div class="field">
+          <label>💖 心情 / 氣氛？<small>（點一個）</small></label>
+          <div class="chips single" data-target="mood"></div>
+        </div>
+
+        <div class="field">
+          <label>🎥 鏡頭怎麼拍？<small>（點一個）</small></label>
+          <div class="chips single" data-target="camera"></div>
+        </div>
+
+        <div class="field">
+          <label for="extra">⭐ 還想加什麼小細節？<small>（可留空）</small></label>
+          <input id="extra" type="text" placeholder="例如：發光的星星、彩虹、毛茸茸的質感" />
+        </div>
+
+        <div class="preview">
+          <span class="preview-label">目前組好的句子：</span>
+          <p id="preview-text">（先填上面的空格…）</p>
+        </div>
+
+        <div class="actions">
+          <button id="summon" class="button primary">✨ 開始詠唱</button>
+          <button id="reset" class="button ghost">🧹 清空重來</button>
+        </div>
+        <p class="parent-tip">
+          👨‍👩‍👧 給家長：讓孩子先用自己的話描述，再一起把它變具體。問問「主角心情如何？」「光線是亮的還暗的？」
+        </p>
+      </section>
+
+      <!-- 區塊二：AI 擴寫結果 -->
+      <section id="result" class="card result hidden">
+        <h2><span class="step">2</span> 你的完整詠唱</h2>
+        <div class="spinner hidden" id="summon-spinner">🪄 魔法施展中…</div>
+        <div class="result-body" id="result-body"></div>
+      </section>
+
+      <!-- 區塊三：照片變魔法 -->
+      <section class="card photo">
+        <h2><span class="step">3</span> 📸 把照片變魔法（選用）</h2>
+        <p class="photo-desc">
+          上傳一張照片，AI 會看圖並建議三個「把這張改造成⋯」的詠唱。
+          複製詠唱後，到 <strong>Gemini</strong> 上傳同一張照片＋貼上詠唱，就能改圖。
+        </p>
+        <div class="upload-row">
+          <label class="button ghost" for="photo-input">選擇照片</label>
+          <input id="photo-input" type="file" accept="image/*" hidden />
+          <button id="analyze" class="button primary" disabled>🔮 看看這張照片</button>
+        </div>
+        <div id="photo-preview" class="photo-preview hidden">
+          <img id="photo-img" alt="預覽" />
+        </div>
+        <div class="spinner hidden" id="photo-spinner">🪄 AI 正在看照片…</div>
+        <div class="result-body" id="photo-result"></div>
+        <p class="parent-tip">
+          🔒 隱私提醒：別上傳含證件、地址、學校班級的照片；公開分享前先確認沒有不想外流的家庭資訊。
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>魔法詠唱產生器 · 親子共學 AI 賦能</p>
+      <p id="backend-note"></p>
+    </footer>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
