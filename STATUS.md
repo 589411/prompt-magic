@@ -1,5 +1,10 @@
 # STATUS — 魔法詠唱產生器 (prompt-magic)
 
+## 更新（2026-06-28 第三批）
+- 🧩 填空模板**大幅擴充**：程式化改編 doggy8088/PromptFill（MIT）的 `banks.js`/`templates.js` → `data-fill.js`（**6 分類、61 詞庫、17 模板**），已淨化掉版權角色（死侍/超人/哈利波特）、真人合影、私密類項目，成闔家版。分頁加**分類篩選＋搜尋**。
+- 修正範例圖被裁切：CSS 改為以高度為限、寬度自適應置中（完整顯示）；圖改用本地 `assets/refs/` 的 6 張公共領域名畫、依模板分類對應。
+- 轉換腳本暫存於 `/tmp/pf-*.mjs`（未進 repo）；要重生 data-fill.js 可重抓 PromptFill 的 banks.js/templates.js 再跑。
+
 ## 更新（2026-06-28 第二批）
 - ✅ 自訂網域上線：**https://prompt-magic.launchdock.app**（CNAME＋HTTPS 已簽，200）。
 - ✅ 新增第 4 個分頁 **🧩 填空模板**：仿 prompt-fill 的「模板＋{{變數}}＋共享詞庫」，但用站內紫色版型、自家闔家詞庫、名畫預覽圖標公共領域出處、無多奇品牌；可直接複製或交給 AI 潤色。介面靈感註明 PromptFill（MIT）。
