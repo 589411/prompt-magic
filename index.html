@@ -24,7 +24,8 @@
       </div>
       <div class="age-switch" role="tablist" aria-label="選擇風格年齡">
         <button class="age-btn is-active" data-age="kid" role="tab" aria-selected="true">🧸 小小孩・可愛風</button>
-        <button class="age-btn" data-age="teen" role="tab" aria-selected="false">🚀 大小孩・遊戲科幻</button>
+        <button class="age-btn" data-age="teen" role="tab" aria-selected="false">🚀 大小孩・酷炫奇幻</button>
+        <button class="age-btn" data-age="pro" role="tab" aria-selected="false">🎬 大人・電影創作</button>
       </div>
     </header>
 
@@ -34,50 +35,14 @@
         把詠唱<strong>複製</strong>，貼到 Gemini、ChatGPT 或 Copilot，就能變出畫面！
       </p>
 
-      <!-- 區塊一：填空式詠唱建構 -->
+      <!-- 區塊一：填空式詠唱建構（依模式動態生成欄位） -->
       <section class="card builder">
-        <h2><span class="step">1</span> 填空：說清楚你想要的畫面</h2>
+        <h2><span class="step">1</span> <span id="builder-title">填空：說清楚你想要的畫面</span></h2>
 
-        <div class="field">
-          <label for="subject">🦸 誰是主角？</label>
-          <input id="subject" type="text" placeholder="例如：我家的橘貓、戴斗篷的小英雄、全家人" />
-          <div class="chips" data-target="subject"></div>
-        </div>
-
-        <div class="field">
-          <label for="action">🎬 主角在做什麼？</label>
-          <input id="action" type="text" placeholder="例如：在發射魔法、開心地飛起來、一起野餐" />
-          <div class="chips" data-target="action"></div>
-        </div>
-
-        <div class="field">
-          <label for="place">🗺️ 在哪裡？</label>
-          <input id="place" type="text" placeholder="例如：星空下的城堡、未來城市、奶奶家的院子" />
-          <div class="chips" data-target="place"></div>
-        </div>
-
-        <div class="field">
-          <label>🎨 想要什麼風格？<small>（點一個）</small></label>
-          <div class="chips single" data-target="style"></div>
-        </div>
-
-        <div class="field">
-          <label>💖 心情 / 氣氛？<small>（點一個）</small></label>
-          <div class="chips single" data-target="mood"></div>
-        </div>
-
-        <div class="field">
-          <label>🎥 鏡頭怎麼拍？<small>（點一個）</small></label>
-          <div class="chips single" data-target="camera"></div>
-        </div>
-
-        <div class="field">
-          <label for="extra">⭐ 還想加什麼小細節？<small>（可留空）</small></label>
-          <input id="extra" type="text" placeholder="例如：發光的星星、彩虹、毛茸茸的質感" />
-        </div>
+        <div id="builder-fields"></div>
 
         <div class="preview">
-          <span class="preview-label">目前組好的句子：</span>
+          <span class="preview-label" id="preview-label">目前組好的句子：</span>
           <p id="preview-text">（先填上面的空格…）</p>
         </div>
 
@@ -85,9 +50,7 @@
           <button id="summon" class="button primary">✨ 開始詠唱</button>
           <button id="reset" class="button ghost">🧹 清空重來</button>
         </div>
-        <p class="parent-tip">
-          👨‍👩‍👧 給家長：讓孩子先用自己的話描述，再一起把它變具體。問問「主角心情如何？」「光線是亮的還暗的？」
-        </p>
+        <p class="parent-tip" id="builder-tip"></p>
       </section>
 
       <!-- 區塊二：AI 擴寫結果 -->

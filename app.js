@@ -3,89 +3,191 @@
 const CFG = window.PROMPT_MAGIC_CONFIG || { API_ENDPOINT: "", APP_KEY: "" };
 const HAS_BACKEND = !!CFG.API_ENDPOINT;
 
-/* ---------- 提示詞素材庫（依年齡切換建議選項） ---------- */
-const PRESETS = {
+/* =========================================================================
+ *  模式 schema：每個模式宣告自己的欄位，表單依此動態生成。
+ *  欄位 type： text=純輸入 / suggest=輸入+建議詞(點擊附加) / single=單選chip
+ *  每欄位： {id, name(純文字標籤,給預覽與AI), label(UI顯示,可含emoji), type, ph?, opts?}
+ * ========================================================================= */
+const MODES = {
   kid: {
-    subject: ["我自己", "全家人", "我家的貓", "我家的狗", "小恐龍", "戴皇冠的公主", "勇敢的小英雄"],
-    action: ["開心地笑", "在天上飛", "放魔法煙火", "一起野餐", "抱抱", "吹泡泡"],
-    place: ["彩虹城堡", "棉花糖雲朵上", "魔法森林", "海邊沙灘", "奶奶家院子", "星空下"],
-    style: ["可愛 Q 版", "吉卜力動畫風", "水彩繪本", "黏土公仔", "毛茸茸絨毛玩具", "蠟筆塗鴉"],
-    mood: ["溫馨", "歡樂", "夢幻", "甜甜的", "驚喜"],
-    camera: ["正面特寫", "可愛全身", "從上面看", "近近的大頭照"],
+    label: "🧸 小小孩・可愛風",
+    title: "填空：說清楚你想要的畫面",
+    previewLabel: "目前組好的句子：",
+    tip: "👨‍👩‍👧 給家長：讓孩子先用自己的話描述，再一起把它變具體。問問「主角心情如何？」「光線是亮的還暗的？」",
+    primary: "subject",
+    kind: "image",
+    style: "幼兒、溫馨可愛、適合親子",
+    fields: [
+      { id: "subject", name: "主角", label: "🦸 誰是主角？", type: "suggest", ph: "例如：我家的橘貓、全家人",
+        opts: ["我自己", "全家人", "小貓咪", "小狗狗", "小兔子", "獨角獸", "小美人魚", "小恐龍", "小機器人", "小公主", "小王子", "超級英雄"] },
+      { id: "action", name: "在做什麼", label: "🎬 主角在做什麼？", type: "suggest", ph: "例如：在天上飛、開生日派對",
+        opts: ["開心地笑", "在天上飛", "變身魔法", "放魔法煙火", "開生日派對", "跟動物玩", "一起野餐", "吹泡泡", "抱抱"] },
+      { id: "place", name: "地點", label: "🗺️ 在哪裡？", type: "suggest", ph: "例如：彩虹城堡、海底世界",
+        opts: ["彩虹城堡", "糖果屋", "海底世界", "棉花糖雲朵上", "魔法森林", "恐龍樂園", "太空星球", "奶奶家院子"] },
+      { id: "style", name: "風格", label: "🎨 想要什麼風格？", type: "single",
+        opts: ["可愛 Q 版", "吉卜力動畫風", "水彩繪本", "童話插畫", "黏土公仔", "毛茸茸絨毛玩具", "蠟筆塗鴉"] },
+      { id: "mood", name: "心情", label: "💖 心情 / 氣氛？", type: "single",
+        opts: ["溫馨", "歡樂", "夢幻", "甜甜的", "閃亮亮", "驚喜"] },
+      { id: "camera", name: "鏡頭", label: "🎥 鏡頭怎麼拍？", type: "single",
+        opts: ["正面特寫", "可愛全身", "從上面看", "近近的大頭照"] },
+      { id: "extra", name: "小細節", label: "⭐ 還想加什麼小細節？", type: "text", ph: "例如：發光的星星、彩虹、毛茸茸的質感" },
+    ],
   },
+
   teen: {
-    subject: ["未來戰士", "機甲駕駛員", "魔法師", "賽車手", "太空探險家", "我自己變成英雄"],
-    action: ["發射能量光束", "駕駛機甲", "施展元素魔法", "高速衝刺", "召喚神獸", "潛入基地"],
-    place: ["賽博龐克城市", "外太空戰艦", "末日廢墟", "浮空島嶼", "霓虹夜街", "古代遺跡"],
-    style: ["3D 遊戲 CG", "電影級寫實", "日系動漫", "賽博龐克", "像素藝術", "黑白漫畫", "概念設定圖"],
-    mood: ["史詩磅礴", "神秘", "緊張刺激", "酷炫", "孤獨蒼涼"],
-    camera: ["電影感廣角", "低角度仰拍", "戲劇性特寫", "俯瞰全景", "動態追焦"],
+    label: "🚀 大小孩・酷炫奇幻",
+    title: "填空：說清楚你想要的畫面",
+    previewLabel: "目前組好的句子：",
+    tip: "🧑‍🎨 試試混搭：可愛＋科幻、奇幻＋時尚都行。不滿意就換風格或心情再生一次。",
+    primary: "subject",
+    kind: "image",
+    style: "青少年、酷炫奇幻；遊戲、科幻、奇幻、夢幻、偶像、時尚、療癒皆可，以使用者實際選的風格與主角為準，不要預設成男生取向",
+    fields: [
+      { id: "subject", name: "主角", label: "🦸 誰是主角？", type: "suggest", ph: "例如：魔法少女、未來戰士、我自己",
+        opts: ["魔法少女", "未來戰士", "偶像歌手", "魔法師", "時尚設計師", "賽車手", "精靈遊俠", "機甲駕駛員", "神獸馴獸師", "太空探險家", "我自己變成主角"] },
+      { id: "action", name: "在做什麼", label: "🎬 在做什麼？", type: "suggest", ph: "例如：站上舞台演唱、召喚神獸",
+        opts: ["施展元素魔法", "站上舞台演唱", "走伸展台", "駕駛機甲", "召喚神獸", "變身", "高速衝刺", "探索神秘遺跡"] },
+      { id: "place", name: "地點", label: "🗺️ 在哪裡？", type: "suggest", ph: "例如：星空舞台、夢幻花海、賽博城市",
+        opts: ["浮空奇幻島嶼", "星空演唱會舞台", "魔法學院", "賽博龐克城市", "夢幻花海", "櫻花校園", "霓虹夜街", "外太空戰艦"] },
+      { id: "style", name: "風格", label: "🎨 想要什麼風格？", type: "single",
+        opts: ["日系動漫", "夢幻奇幻插畫", "少女漫畫", "3D 遊戲 CG", "時尚雜誌風", "電影級寫實", "賽博龐克", "水彩奇幻", "像素藝術"] },
+      { id: "mood", name: "氛圍", label: "💖 氛圍？", type: "single",
+        opts: ["夢幻唯美", "史詩磅礴", "浪漫", "酷炫", "神秘", "熱血", "療癒"] },
+      { id: "camera", name: "鏡頭", label: "🎥 鏡頭怎麼拍？", type: "single",
+        opts: ["電影感廣角", "戲劇性特寫", "夢幻柔焦", "低角度仰拍", "俯瞰全景", "動態追焦"] },
+      { id: "extra", name: "加分細節", label: "⭐ 加分細節？", type: "text", ph: "例如：發光粒子、櫻花飄落、霓虹反光" },
+    ],
+  },
+
+  pro: {
+    label: "🎬 大人・電影創作",
+    title: "電影前期設定：把一顆鏡頭設計清楚",
+    previewLabel: "目前的鏡頭設定：",
+    tip: "🎥 給創作者：先寫 logline 與人設，再決定景別、機位、運鏡、光線與敘事角度。產出可直接餵 AI 生圖當分鏡稿（keyframe），影片可再丟 Luma/可靈。",
+    primary: "logline",
+    kind: "film",
+    fields: [
+      { id: "logline", name: "一句話故事(logline)", label: "📝 一句話故事 logline", type: "text",
+        ph: "例如：一名退役太空人重返荒廢的月球基地，尋找女兒最後的訊號" },
+      { id: "genre", name: "類型", label: "🎞️ 類型", type: "single",
+        opts: ["劇情", "科幻", "驚悚 / 懸疑", "愛情", "動作", "奇幻", "恐怖", "黑色電影 Noir", "紀錄片風", "公路電影", "賽博龐克"] },
+      { id: "era", name: "時空背景 / 年代", label: "🕰️ 時空背景 / 年代", type: "suggest", ph: "例如：近未來 2087、1980 年代復古",
+        opts: ["近未來 2087", "1920 年代", "1980 年代復古", "中世紀奇幻", "末日廢土", "現代都市", "蒸汽龐克", "架空王朝古裝"] },
+      { id: "location", name: "場景地點", label: "📍 場景地點", type: "suggest", ph: "例如：雨夜霓虹街道、太空艙內部",
+        opts: ["雨夜霓虹街道", "廢棄工廠", "海邊燈塔", "太空艙內部", "古宅書房", "荒漠公路", "頂樓天台", "地下酒吧", "竹林", "醫院長廊"] },
+      { id: "character", name: "主角人設", label: "🧑 主角人設（年齡 / 外型 / 服裝 / 氣質）", type: "text",
+        ph: "例如：40 歲女性，俐落短髮，磨損的飛行夾克，眼神疲憊而堅定" },
+      { id: "action", name: "這顆鏡頭發生什麼", label: "🎬 這顆鏡頭發生什麼", type: "text",
+        ph: "例如：她緩緩推開鏽蝕的艙門，光灑進黑暗" },
+      { id: "shot", name: "景別", label: "🔲 景別 Shot size", type: "single",
+        opts: ["大遠景 ELS", "遠景 LS", "全景 FS", "中景 MS", "中近景 MCU", "特寫 CU", "大特寫 ECU"] },
+      { id: "angle", name: "機位角度", label: "📐 機位角度 Angle", type: "single",
+        opts: ["平視 Eye-level", "俯角 High-angle", "仰角 Low-angle", "鳥瞰 Top-down", "荷蘭角 Dutch", "過肩 OTS"] },
+      { id: "movement", name: "運鏡", label: "🎥 運鏡 Movement", type: "single",
+        opts: ["固定鏡頭", "推軌推近 Dolly-in", "拉遠 Dolly-out", "橫搖 Pan", "直搖 Tilt", "手持跟拍 Handheld", "空拍環繞", "Steadicam 跟隨", "變焦 Zoom"] },
+      { id: "lens", name: "鏡頭焦段 / 景深", label: "🔭 鏡頭焦段 / 景深", type: "single",
+        opts: ["廣角 14-24mm", "標準 35mm", "標準 50mm", "人像 85mm", "長焦 135mm", "微距", "淺景深散景", "深景深全清晰"] },
+      { id: "lighting", name: "光線", label: "💡 光線 Lighting", type: "single",
+        opts: ["自然光", "黃金時刻 Golden hour", "藍調時刻 Blue hour", "高反差硬光", "柔光", "低調暗部 Low-key", "高調明亮 High-key", "霓虹混色", "逆光剪影", "燭光 / 火光"] },
+      { id: "grade", name: "色調", label: "🎨 色調 Color grade", type: "single",
+        opts: ["暖色調", "冷色調", "青橙 Teal & Orange", "復古褪色", "高飽和", "黑白", "低飽和寫實", "柔和粉彩"] },
+      { id: "narration", name: "敘事角度", label: "👁️ 敘事角度 Narrative POV", type: "single",
+        opts: ["客觀旁觀", "跟隨主角", "主角主觀 POV", "全知視角", "不可靠敘事", "回憶 / 閃回"] },
+      { id: "mood", name: "氛圍", label: "🌫️ 氛圍", type: "single",
+        opts: ["緊張懸疑", "浪漫", "孤寂蒼涼", "史詩磅礴", "溫暖療癒", "不安詭譎", "希望昂揚", "冷冽疏離"] },
+      { id: "extra", name: "其他指定", label: "➕ 其他指定（道具 / 天氣 / 參考風格）", type: "text",
+        ph: "例如：濃霧、霓虹反射在濕地面、致敬 Blade Runner 的氛圍" },
+    ],
   },
 };
 
-let currentAge = "kid";
-const single = { style: "", mood: "", camera: "" }; // 單選欄位的值
+let currentMode = "kid";
+let selections = {}; // 單選欄位的值 {fieldId: value}
 
-/* ---------- 渲染選項 chips ---------- */
-function renderChips() {
-  document.querySelectorAll(".chips").forEach((box) => {
-    const key = box.dataset.target;
-    const isSingle = box.classList.contains("single");
-    const items = PRESETS[currentAge][key] || [];
-    box.innerHTML = "";
-    items.forEach((label) => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.textContent = label;
-      if (isSingle && single[key] === label) chip.classList.add("is-on");
-      chip.addEventListener("click", () => onChip(key, label, isSingle, chip, box));
-      box.appendChild(chip);
-    });
+/* ---------- 動態生成表單 ---------- */
+function renderForm() {
+  const mode = MODES[currentMode];
+  selections = {};
+  const wrap = document.getElementById("builder-fields");
+  wrap.innerHTML = "";
+
+  document.getElementById("builder-title").textContent = mode.title;
+  document.getElementById("preview-label").textContent = mode.previewLabel;
+  document.getElementById("builder-tip").textContent = mode.tip;
+  document.getElementById("summon").textContent = mode.kind === "film" ? "🎬 生成鏡頭 / 分鏡" : "✨ 開始詠唱";
+
+  mode.fields.forEach((f) => {
+    const field = document.createElement("div");
+    field.className = "field";
+
+    const label = document.createElement("label");
+    label.innerHTML = f.label + (f.type === "single" ? ' <small>（點一個）</small>' : "");
+    if (f.type !== "single") label.setAttribute("for", f.id);
+    field.appendChild(label);
+
+    if (f.type === "single") {
+      const chips = document.createElement("div");
+      chips.className = "chips single";
+      f.opts.forEach((opt) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = opt;
+        chip.addEventListener("click", () => {
+          const off = selections[f.id] === opt;
+          selections[f.id] = off ? "" : opt;
+          chips.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-on"));
+          if (!off) chip.classList.add("is-on");
+          updatePreview();
+        });
+        chips.appendChild(chip);
+      });
+      field.appendChild(chips);
+    } else {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = f.id;
+      input.placeholder = f.ph || "";
+      input.addEventListener("input", updatePreview);
+      field.appendChild(input);
+      if (f.type === "suggest" && f.opts) {
+        const chips = document.createElement("div");
+        chips.className = "chips";
+        f.opts.forEach((opt) => {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = opt;
+          chip.addEventListener("click", () => {
+            input.value = input.value ? `${input.value}、${opt}` : opt;
+            updatePreview();
+          });
+          chips.appendChild(chip);
+        });
+        field.appendChild(chips);
+      }
+    }
+    wrap.appendChild(field);
   });
 }
 
-function onChip(key, label, isSingle, chip, box) {
-  if (isSingle) {
-    const turningOff = single[key] === label;
-    single[key] = turningOff ? "" : label;
-    box.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-on"));
-    if (!turningOff) chip.classList.add("is-on");
-  } else {
-    // 多選欄位（主角/動作/地點）：點一下把詞塞進輸入框
-    const input = document.getElementById(key);
-    input.value = input.value ? `${input.value}、${label}` : label;
-  }
-  updatePreview();
-}
-
-/* ---------- 即時組合預覽（中文） ---------- */
+/* ---------- 收集已填內容 ---------- */
+// 回傳 [{name, value}]（只含非空），供預覽與送 AI 用
 function gather() {
-  return {
-    subject: val("subject"),
-    action: val("action"),
-    place: val("place"),
-    style: single.style,
-    mood: single.mood,
-    camera: single.camera,
-    extra: val("extra"),
-  };
-}
-const val = (id) => document.getElementById(id).value.trim();
-
-function buildSentence(g) {
-  const parts = [];
-  if (g.mood) parts.push(`一張${g.mood}氣氛的圖`);
-  if (g.subject) parts.push(`主角是${g.subject}`);
-  if (g.action) parts.push(`正在${g.action}`);
-  if (g.place) parts.push(`場景在${g.place}`);
-  if (g.style) parts.push(`畫面風格是${g.style}`);
-  if (g.camera) parts.push(`用${g.camera}的鏡頭`);
-  if (g.extra) parts.push(`細節：${g.extra}`);
-  return parts.join("，") + (parts.length ? "。" : "");
+  const out = [];
+  MODES[currentMode].fields.forEach((f) => {
+    let v = "";
+    if (f.type === "single") v = selections[f.id] || "";
+    else {
+      const el = document.getElementById(f.id);
+      v = el ? el.value.trim() : "";
+    }
+    if (v) out.push({ name: f.name, value: v });
+  });
+  return out;
 }
 
 function updatePreview() {
-  const s = buildSentence(gather());
+  const g = gather();
+  const s = g.map((x) => `${x.name}：${x.value}`).join("　/　");
   document.getElementById("preview-text").textContent = s || "（先填上面的空格…）";
 }
 
@@ -111,12 +213,12 @@ function parseJSON(text) {
   try { return JSON.parse(m[0]); } catch { return null; }
 }
 
-/* ---------- 召喚完整詠唱 ---------- */
+/* ---------- 召喚 / 開拍 ---------- */
 async function summon() {
+  const mode = MODES[currentMode];
   const g = gather();
-  const sentence = buildSentence(g);
-  if (!g.subject && !sentence) {
-    alert("先至少填一個「主角」吧！");
+  if (!g.length) {
+    alert("先填一些內容吧！");
     return;
   }
   const resultCard = document.getElementById("result");
@@ -126,43 +228,68 @@ async function summon() {
   body.innerHTML = "";
   resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // 離線模式：直接給組好的中文句子當詠唱
+  const filled = g.map((x) => `${x.name}：${x.value}`).join("\n");
+
   if (!HAS_BACKEND) {
-    renderPrompts(body, {
-      zh: sentence + " 高品質、細節豐富、光線漂亮。",
-      en: "(尚未設定 AI 後端，無法自動翻譯成英文。請部署 worker 後再試。)",
-    });
+    renderPrompts(body, { zh: filled + "\n（尚未設定 AI 後端，無法擴寫與翻譯。）", en: "" });
     return;
   }
 
   spinner.classList.remove("hidden");
-  const ageDesc = currentAge === "kid" ? "幼兒、溫馨可愛、適合親子" : "青少年、遊戲科幻、酷炫";
-  const system =
-    "你是親子 AI 生圖教學的提示詞大師。把家長與孩子填的零碎想法，擴寫成一段高品質的生圖提示詞（prompt）。" +
-    "風格定位：" + ageDesc + "。要安全、正向、適合闔家觀賞，避免暴力血腥與真實人物換臉。" +
-    "只回傳 JSON，格式：{\"zh\":\"中文版完整提示詞\",\"en\":\"English version, comma-separated descriptive prompt\"}。" +
-    "中文版用通順自然的句子描述主體、動作、場景、風格、光線、氛圍、構圖與畫質；英文版是給生圖模型吃的逗號分隔關鍵詞句。不要加任何多餘說明。";
-  const user = "孩子和家長填的內容：\n" + JSON.stringify(g, null, 2) + "\n\n組好的中文句子：" + sentence;
+  let system;
+  if (mode.kind === "film") {
+    system =
+      "你是專業電影導演與分鏡師（storyboard artist）。根據使用者填的電影前期設定，" +
+      "產出可直接餵 AI 生圖、當作分鏡稿關鍵畫格（keyframe）的專業提示詞，並提供一組分鏡序列。" +
+      "請運用正確的電影語言（景別、機位角度、運鏡、鏡頭焦段、光線、色調、敘事角度、畫面比例）。" +
+      "安全正向，避免血腥與真實名人換臉。只回傳 JSON：" +
+      '{"zh":"這顆主鏡頭的中文電影化描述（涵蓋時空背景、場景、人物、景別、機位、運鏡、鏡頭、光線色調、敘事角度與氛圍）",' +
+      '"en":"a detailed English cinematic image-generation prompt: photoreal film still, include shot size, camera angle, lens (mm), lighting, color grade, mood, film grain, aspect ratio 2.39:1",' +
+      '"shots":[{"shot":"鏡1 ‧ 景別/運鏡","desc":"這顆鏡頭的畫面與敘事重點"}]}。' +
+      "shots 給 3～5 顆，串起來能說明這場戲。不要加任何多餘文字。";
+  } else {
+    system =
+      "你是親子 AI 生圖教學的提示詞大師。把家長與孩子填的零碎想法，擴寫成一段高品質的生圖提示詞。" +
+      "風格定位：" + mode.style + "。要安全、正向、適合闔家觀賞，避免暴力血腥與真實人物換臉。" +
+      '只回傳 JSON：{"zh":"中文版完整提示詞","en":"English version, comma-separated descriptive prompt"}。' +
+      "中文版用通順自然的句子描述主體、動作、場景、風格、光線、氛圍、構圖與畫質；英文版是給生圖模型吃的逗號分隔關鍵詞句。不要加多餘說明。";
+  }
+  const user = "使用者填的內容：\n" + filled;
 
   try {
-    const text = await callLLM({ system, user, maxTokens: 1200 });
+    const text = await callLLM({ system, user, maxTokens: mode.kind === "film" ? 2000 : 1200 });
     const obj = parseJSON(text);
     if (obj && (obj.zh || obj.en)) renderPrompts(body, obj);
-    else renderPrompts(body, { zh: text, en: "" }); // 解析失敗就直接顯示原文
+    else renderPrompts(body, { zh: text, en: "" });
   } catch (e) {
-    body.innerHTML = `<div class="error-msg">😢 召喚失敗：${escapeHtml(String(e.message || e))}<br>先用上面組好的中文句子也可以貼去生圖喔。</div>`;
+    body.innerHTML = `<div class="error-msg">😢 失敗：${escapeHtml(String(e.message || e))}<br>先用上面組好的內容也可以貼去生圖。</div>`;
   } finally {
     spinner.classList.add("hidden");
   }
 }
 
-function renderPrompts(container, { zh, en }) {
+function renderPrompts(container, obj) {
+  const { zh, en, shots } = obj;
   container.innerHTML = "";
-  if (zh) container.appendChild(promptBox("🪄 中文詠唱（給人看、貼 Gemini 也通）", zh));
-  if (en) container.appendChild(promptBox("🌐 英文詠唱（生圖品質更好）", en));
+  const film = MODES[currentMode].kind === "film";
+  if (zh) container.appendChild(promptBox(film ? "🎬 中文鏡頭描述" : "🪄 中文詠唱（給人看、貼 Gemini 也通）", zh));
+  if (en) container.appendChild(promptBox(film ? "🎞️ 英文生圖提示詞（cinematic）" : "🌐 英文詠唱（生圖品質更好）", en));
+  if (Array.isArray(shots) && shots.length) {
+    const h = document.createElement("p");
+    h.className = "preview-label";
+    h.style.marginTop = "6px";
+    h.textContent = "🎬 分鏡序列：";
+    container.appendChild(h);
+    shots.forEach((s, i) => {
+      const title = s.shot ? `🎞️ ${s.shot}` : `🎞️ 鏡 ${i + 1}`;
+      container.appendChild(promptBox(title, s.desc || ""));
+    });
+  }
   const tip = document.createElement("p");
   tip.className = "parent-tip";
-  tip.innerHTML = "📋 複製詠唱 → 打開 <strong>Gemini</strong>／<strong>ChatGPT</strong>／<strong>Copilot</strong> → 貼上 → 送出，就會變出圖！不滿意就改幾個字再生一次。";
+  tip.innerHTML = film
+    ? "📋 複製英文提示詞 → <strong>Gemini</strong>／<strong>ChatGPT</strong> 生關鍵畫格；要動起來就把畫格丟 <strong>Luma</strong>／<strong>可靈</strong>。分鏡可逐顆生成串成一場戲。"
+    : "📋 複製詠唱 → 打開 <strong>Gemini</strong>／<strong>ChatGPT</strong>／<strong>Copilot</strong> → 貼上 → 送出，就會變出圖！不滿意就改幾個字再生一次。";
   container.appendChild(tip);
 }
 
@@ -198,7 +325,7 @@ function onPhotoPick(e) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    photoDataUrl = reader.result; // data:image/...;base64,...
+    photoDataUrl = reader.result;
     const img = document.getElementById("photo-img");
     img.src = photoDataUrl;
     document.getElementById("photo-preview").classList.remove("hidden");
@@ -217,12 +344,15 @@ async function analyzePhoto() {
     return;
   }
   spinner.classList.remove("hidden");
-  const ageDesc = currentAge === "kid" ? "可愛溫馨、適合幼兒" : "遊戲科幻、酷炫";
+  const mode = MODES[currentMode];
+  const styleHint = mode.kind === "film"
+    ? "電影感、寫實、運用電影語言（景別/光線/色調），給可當分鏡 keyframe 的改造方向"
+    : (currentMode === "kid" ? "可愛溫馨、適合幼兒" : "酷炫奇幻；遊戲/科幻/奇幻/夢幻/偶像/時尚/療癒皆可，依使用者喜好，不要預設男生取向");
   const system =
-    "你是親子 AI 生圖教學的提示詞大師，正在看一張家庭照片。" +
-    "請用親切中文簡述照片重點（主體、動作、背景），再提出三個有創意的「把這張照片改造成…」的編修詠唱，風格偏向：" + ageDesc + "。" +
-    "改造詠唱要能直接貼到 Gemini（搭配同一張照片）使用。安全正向、適合闔家。" +
-    "只回傳 JSON：{\"summary\":\"照片重點\",\"prompts\":[\"詠唱1\",\"詠唱2\",\"詠唱3\"]}。";
+    "你是 AI 生圖提示詞大師，正在看一張照片。" +
+    "請用親切中文簡述照片重點（主體、動作、背景），再提出三個有創意的「把這張照片改造成…」的編修提示詞，風格偏向：" + styleHint + "。" +
+    "改造提示詞要能直接貼到 Gemini（搭配同一張照片）使用。安全正向。" +
+    '只回傳 JSON：{"summary":"照片重點","prompts":["提示詞1","提示詞2","提示詞3"]}。';
   const user = "請看這張照片並給建議。";
   try {
     const text = await callLLM({ system, user, images: [photoDataUrl], maxTokens: 1200 });
@@ -236,10 +366,10 @@ async function analyzePhoto() {
     }
     const prompts = (obj && obj.prompts) || [];
     if (prompts.length) {
-      prompts.forEach((p, i) => out.appendChild(promptBox(`✨ 改造詠唱 ${i + 1}`, p)));
+      prompts.forEach((p, i) => out.appendChild(promptBox(`✨ 改造提示詞 ${i + 1}`, p)));
       const tip = document.createElement("p");
       tip.className = "parent-tip";
-      tip.innerHTML = "做法：打開 <strong>Gemini</strong> → 上傳同一張照片 → 貼上改造詠唱 → 送出。";
+      tip.innerHTML = "做法：打開 <strong>Gemini</strong> → 上傳同一張照片 → 貼上改造提示詞 → 送出。";
       out.appendChild(tip);
     } else if (!obj) {
       out.appendChild(promptBox("AI 建議", text));
@@ -257,34 +387,27 @@ function escapeHtml(s) {
 }
 
 function resetAll() {
-  ["subject", "action", "place", "extra"].forEach((id) => (document.getElementById(id).value = ""));
-  single.style = single.mood = single.camera = "";
-  renderChips();
+  renderForm();
   updatePreview();
   document.getElementById("result").classList.add("hidden");
 }
 
 function init() {
-  renderChips();
+  renderForm();
   updatePreview();
 
   document.querySelectorAll(".age-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
-      currentAge = btn.dataset.age;
+      currentMode = btn.dataset.age;
       document.querySelectorAll(".age-btn").forEach((b) => {
         const on = b === btn;
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      single.style = single.mood = single.camera = "";
-      renderChips();
+      renderForm();
       updatePreview();
     });
   });
-
-  ["subject", "action", "place", "extra"].forEach((id) =>
-    document.getElementById(id).addEventListener("input", updatePreview)
-  );
 
   document.getElementById("summon").addEventListener("click", summon);
   document.getElementById("reset").addEventListener("click", resetAll);
@@ -293,7 +416,7 @@ function init() {
 
   document.getElementById("backend-note").textContent = HAS_BACKEND
     ? "AI 後端：已連線"
-    : "AI 後端：尚未設定（目前為離線模式，只組合中文詠唱）";
+    : "AI 後端：尚未設定（目前為離線模式）";
 }
 
 document.addEventListener("DOMContentLoaded", init);
