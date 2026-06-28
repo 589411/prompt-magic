@@ -26,6 +26,7 @@
         <button class="age-btn is-active" data-age="kid" role="tab" aria-selected="true">🧸 小小孩・可愛風</button>
         <button class="age-btn" data-age="teen" role="tab" aria-selected="false">🚀 大小孩・酷炫奇幻</button>
         <button class="age-btn" data-age="pro" role="tab" aria-selected="false">🎬 大人・電影創作</button>
+        <button class="age-btn" data-age="template" role="tab" aria-selected="false">🧩 填空模板</button>
       </div>
     </header>
 
@@ -42,7 +43,10 @@
         <div id="builder-fields"></div>
 
         <div class="preview">
-          <span class="preview-label" id="preview-label">目前組好的句子：</span>
+          <div class="preview-head">
+            <span class="preview-label" id="preview-label">目前組好的句子：</span>
+            <button id="preview-copy" class="copy-btn" type="button">複製</button>
+          </div>
           <p id="preview-text">（先填上面的空格…）</p>
         </div>
 

@@ -99,9 +99,49 @@ const MODES = {
         ph: "例如：濃霧、霓虹反射在濕地面、致敬 Blade Runner 的氛圍" },
     ],
   },
+
+  template: {
+    label: "🧩 填空模板",
+    title: "選一個模板，把空格填滿",
+    previewLabel: "組好的提示詞：",
+    tip: "🧩 點一個模板 → 填／點選每個空格的詞 → 複製提示詞，或交給 AI 潤色。預覽圖為公共領域名畫（Wikimedia Commons），點圖看出處。介面靈感參考開源專案 PromptFill（MIT）。",
+    kind: "template",
+    summonLabel: "✨ 交給 AI 潤色",
+    // 共享詞庫：每個 {{變數}} 的建議詞（仿 prompt-fill 的詞庫概念）
+    vocab: {
+      主體: ["一隻橘貓", "一位少女", "一個小男孩", "全家福", "一座未來城市", "一隻機械龍", "一位老匠人", "一艘太空船"],
+      風格: ["浮世繪", "印象派", "梵谷星夜", "吉卜力動畫", "3D 皮克斯", "水彩繪本", "賽博龐克", "像素藝術", "新藝術慕夏", "文藝復興油畫"],
+      場景: ["星空下", "雨後霓虹街道", "櫻花林", "海邊黃昏", "未來都市", "魔法森林", "古老圖書館", "雲海之上"],
+      光線: ["黃金時刻", "柔和晨光", "霓虹夜色", "逆光剪影", "戲劇性側光", "柔和散光"],
+      情緒: ["溫馨", "史詩", "寧靜", "神秘", "歡樂", "孤寂", "浪漫"],
+      鏡頭: ["特寫", "全景", "俯瞰", "廣角", "淺景深"],
+      色調: ["暖色", "冷色", "青橙", "復古褪色", "高飽和", "柔和粉彩"],
+      構圖: ["置中對稱", "三分法", "留白", "對角線"],
+    },
+    // 每個模板含 {{變數}} 空格；預覽圖＝公共領域名畫（PD），已逐一驗證可載入
+    templates: [
+      { id: "char", name: "角色立繪", cat: "人物", file: "Alfons_Mucha_-_1896_-_Spring.jpg", credit: "慕夏《春》· 公共領域",
+        tpl: "一張 {{風格}} 風格的角色立繪，主角是 {{主體}}，{{情緒}} 的神情，背景在 {{場景}}，{{光線}}，{{構圖}} 構圖，高品質、細節豐富" },
+      { id: "scenery", name: "夢幻風景", cat: "攝影", file: "Claude_Monet,_Impression,_soleil_levant.jpg", credit: "莫內《印象・日出》· 公共領域",
+        tpl: "{{風格}} 風格的風景畫面，{{場景}}，{{光線}}，{{色調}} 色調，{{鏡頭}} 鏡頭，{{情緒}} 的氛圍，高解析度" },
+      { id: "storybook", name: "繪本插畫", cat: "卡通", file: "A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg", credit: "秀拉《大碗島的星期日午後》· 公共領域",
+        tpl: "{{風格}} 風格的童書插畫，{{主體}} 在 {{場景}}，{{情緒}} 氛圍，柔和 {{色調}} 色調，溫暖可愛、適合兒童" },
+      { id: "cinematic", name: "電影感場景", cat: "創意", file: "Wanderer_above_the_Sea_of_Fog.jpg", credit: "弗里德里希《霧海上的旅人》· 公共領域",
+        tpl: "電影感畫面，{{主體}} 置身 {{場景}}，{{光線}}，{{色調}} 色調，{{鏡頭}}，{{情緒}} 氛圍，2.39:1 寬螢幕、film grain、cinematic" },
+      { id: "fantasy", name: "奇幻世界", cat: "遊戲", file: "The_Garden_of_Earthly_Delights_by_Bosch_High_Resolution.jpg", credit: "波希《人間樂園》· 公共領域",
+        tpl: "{{風格}} 風格的奇幻場景，{{主體}}，{{場景}}，{{光線}}，宏大世界觀，{{情緒}} 的史詩感、豐富細節" },
+      { id: "product", name: "產品情境", cat: "產品", file: "1665_Girl_with_a_Pearl_Earring.jpg", credit: "維梅爾《戴珍珠耳環的少女》· 公共領域",
+        tpl: "{{主體}} 的產品情境照，擺在 {{場景}}，{{光線}}，{{色調}} 色調，{{構圖}} 構圖，乾淨背景、商業攝影質感、淺景深" },
+    ],
+  },
 };
 
+const COMMONS_IMG = (file) => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=420`;
+const COMMONS_PAGE = (file) => `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(file)}`;
+
 let currentMode = "kid";
+let selectedTemplate = null;   // template 模式：選中的模板
+let tplVals = {};              // template 模式：各 {{變數}} 已填的值
 let selections = {}; // 單選欄位的值 {fieldId: value}
 
 /* ---------- 動態生成表單 ---------- */
@@ -114,7 +154,9 @@ function renderForm() {
   document.getElementById("builder-title").textContent = mode.title;
   document.getElementById("preview-label").textContent = mode.previewLabel;
   document.getElementById("builder-tip").textContent = mode.tip;
-  document.getElementById("summon").textContent = mode.kind === "film" ? "🎬 生成鏡頭 / 分鏡" : "✨ 開始詠唱";
+  document.getElementById("summon").textContent = mode.summonLabel || (mode.kind === "film" ? "🎬 生成鏡頭 / 分鏡" : "✨ 開始詠唱");
+
+  if (mode.kind === "template") { renderTemplateMode(wrap, mode); return; }
 
   mode.fields.forEach((f) => {
     const field = document.createElement("div");
@@ -173,7 +215,7 @@ function renderForm() {
 // 回傳 [{name, value}]（只含非空），供預覽與送 AI 用
 function gather() {
   const out = [];
-  MODES[currentMode].fields.forEach((f) => {
+  (MODES[currentMode].fields || []).forEach((f) => {
     let v = "";
     if (f.type === "single") v = selections[f.id] || "";
     else {
@@ -186,9 +228,96 @@ function gather() {
 }
 
 function updatePreview() {
+  if (MODES[currentMode].kind === "template") {
+    document.getElementById("preview-text").textContent = assembleTemplate(true);
+    return;
+  }
   const g = gather();
   const s = g.map((x) => `${x.name}：${x.value}`).join("　/　");
   document.getElementById("preview-text").textContent = s || "（先填上面的空格…）";
+}
+
+/* ---------- 填空模板模式（仿 prompt-fill，沿用站內版型）---------- */
+const tplVars = (tpl) => {
+  const set = [], re = /\{\{(.+?)\}\}/g; let m;
+  while ((m = re.exec(tpl))) if (!set.includes(m[1])) set.push(m[1]);
+  return set;
+};
+
+// forPreview=true：未填的空格顯示〔變數〕；false：未填的整段拿掉占位、留空
+function assembleTemplate(forPreview) {
+  if (!selectedTemplate) return forPreview ? "（先選一個模板…）" : "";
+  return selectedTemplate.tpl.replace(/\{\{(.+?)\}\}/g, (_, v) => {
+    const val = (tplVals[v] || "").trim();
+    return val || (forPreview ? `〔${v}〕` : v);
+  });
+}
+
+function renderTemplateMode(wrap, mode) {
+  // 1) 模板選擇器（chip 單選，沿用站內 chip 樣式）
+  const pick = document.createElement("div");
+  pick.className = "field";
+  pick.innerHTML = '<label>📑 選一個模板 <small>（點一個）</small></label>';
+  const pchips = document.createElement("div");
+  pchips.className = "chips single";
+  mode.templates.forEach((t) => {
+    const chip = document.createElement("span");
+    chip.className = "chip" + (selectedTemplate && selectedTemplate.id === t.id ? " is-on" : "");
+    chip.textContent = `${t.name}・${t.cat}`;
+    chip.addEventListener("click", () => {
+      selectedTemplate = t;
+      tplVals = {};
+      renderForm();
+      updatePreview();
+    });
+    pchips.appendChild(chip);
+  });
+  pick.appendChild(pchips);
+  wrap.appendChild(pick);
+
+  if (!selectedTemplate) return;
+
+  // 2) 名畫預覽圖＋出處（公共領域，可點看來源）
+  const fig = document.createElement("figure");
+  fig.className = "tpl-figure";
+  fig.innerHTML =
+    `<a href="${COMMONS_PAGE(selectedTemplate.file)}" target="_blank" rel="noopener">` +
+    `<img src="${COMMONS_IMG(selectedTemplate.file)}" alt="${selectedTemplate.credit}" loading="lazy" referrerpolicy="no-referrer" /></a>` +
+    `<figcaption>風格範例：${selectedTemplate.credit}（圖：Wikimedia Commons，點圖看出處）</figcaption>`;
+  wrap.appendChild(fig);
+
+  // 3) 每個 {{變數}} 一個填空欄位：詞庫 chip ＋ 可自訂輸入
+  tplVars(selectedTemplate.tpl).forEach((v) => {
+    const field = document.createElement("div");
+    field.className = "field";
+    const label = document.createElement("label");
+    label.innerHTML = `🔹 ${v} <small>（點詞或自己打）</small>`;
+    label.setAttribute("for", `tv-${v}`);
+    field.appendChild(label);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `tv-${v}`;
+    input.placeholder = `填入「${v}」…`;
+    input.value = tplVals[v] || "";
+    input.addEventListener("input", () => { tplVals[v] = input.value; updatePreview(); });
+    field.appendChild(input);
+
+    const opts = (mode.vocab[v] || []);
+    if (opts.length) {
+      const chips = document.createElement("div");
+      chips.className = "chips";
+      opts.forEach((opt) => {
+        const chip = document.createElement("span");
+        chip.className = "chip";
+        chip.textContent = opt;
+        chip.addEventListener("click", () => { tplVals[v] = opt; input.value = opt; updatePreview(); });
+        chips.appendChild(chip);
+      });
+      field.appendChild(chips);
+    }
+    wrap.appendChild(field);
+  });
 }
 
 /* ---------- 呼叫後端 LLM 代理 ---------- */
@@ -216,6 +345,7 @@ function parseJSON(text) {
 /* ---------- 召喚 / 開拍 ---------- */
 async function summon() {
   const mode = MODES[currentMode];
+  if (mode.kind === "template") return summonTemplate();
   const g = gather();
   if (!g.length) {
     alert("先填一些內容吧！");
@@ -263,6 +393,37 @@ async function summon() {
     else renderPrompts(body, { zh: text, en: "" });
   } catch (e) {
     body.innerHTML = `<div class="error-msg">😢 失敗：${escapeHtml(String(e.message || e))}<br>先用上面組好的內容也可以貼去生圖。</div>`;
+  } finally {
+    spinner.classList.add("hidden");
+  }
+}
+
+async function summonTemplate() {
+  if (!selectedTemplate) { alert("先選一個模板吧！"); return; }
+  const assembled = assembleTemplate(false);
+  const resultCard = document.getElementById("result");
+  const body = document.getElementById("result-body");
+  const spinner = document.getElementById("summon-spinner");
+  resultCard.classList.remove("hidden");
+  body.innerHTML = "";
+  resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // 模板本身就能用：先直接給「填好的提示詞」可複製，AI 潤色為加值
+  if (!HAS_BACKEND) {
+    renderPrompts(body, { zh: assembled, en: "（尚未設定 AI 後端，無法翻譯英文。中文提示詞可直接用。）" });
+    return;
+  }
+  spinner.classList.remove("hidden");
+  const system =
+    "你是 AI 生圖提示詞大師。使用者用『模板填空』組出一段提示詞，請潤飾成更完整自然的中文版，並翻成適合生圖模型的英文版。" +
+    "保留原本的主體、風格、場景、光線等設定，安全正向、適合闔家。" +
+    '只回傳 JSON：{"zh":"潤飾後中文提示詞","en":"English comma-separated prompt"}。不要多餘說明。';
+  try {
+    const text = await callLLM({ system, user: "填好的提示詞：\n" + assembled, maxTokens: 1000 });
+    const obj = parseJSON(text);
+    renderPrompts(body, obj && (obj.zh || obj.en) ? obj : { zh: assembled, en: "" });
+  } catch (e) {
+    body.innerHTML = `<div class="error-msg">😢 潤色失敗：${escapeHtml(String(e.message || e))}<br>沒關係，上面「組好的提示詞」可直接複製使用。</div>`;
   } finally {
     spinner.classList.add("hidden");
   }
@@ -387,6 +548,8 @@ function escapeHtml(s) {
 }
 
 function resetAll() {
+  selectedTemplate = null;
+  tplVals = {};
   renderForm();
   updatePreview();
   document.getElementById("result").classList.add("hidden");
@@ -411,6 +574,14 @@ function init() {
 
   document.getElementById("summon").addEventListener("click", summon);
   document.getElementById("reset").addEventListener("click", resetAll);
+  const pc = document.getElementById("preview-copy");
+  if (pc) pc.addEventListener("click", () => {
+    const t = document.getElementById("preview-text").textContent || "";
+    navigator.clipboard.writeText(t).then(() => {
+      pc.textContent = "已複製 ✓";
+      setTimeout(() => { pc.textContent = "複製"; }, 1500);
+    });
+  });
   document.getElementById("photo-input").addEventListener("change", onPhotoPick);
   document.getElementById("analyze").addEventListener("click", analyzePhoto);
 
