@@ -14,9 +14,11 @@
 ## 卡在哪（選用，不影響使用）
 - 子網域：Cloudflare 後台（launchdock.app zone）加一筆 DNS：CNAME，名稱 `prompt-magic`，目標 `589411.github.io`，Proxy=DNS only（灰雲）。加完告知我，我補 `CNAME` 檔＋設自訂網域。
 
-## 下一個具體動作
-1.（Joseph）開 `https://589411.github.io/prompt-magic/` 實測一輪：填空→開始詠唱→複製→貼 Gemini 生圖；再試上傳照片看圖。回報體驗要調整的地方。
-2.（選用）加子網域 DNS 後告知 → 我加 CNAME 檔＋push＋Pages 設自訂網域，等 GitHub 簽 HTTPS。
+## 下一個具體動作（本 repo 2026-06-28 告一段落，下次接手清單）
+1.（Joseph）開 `https://589411.github.io/prompt-magic/` 實機點一輪：三模式切換、電影模式十幾欄位在手機的版面、填空→生成→複製→貼 Gemini/Luma。回報要調的地方。
+2.（選用）綁子網域：Cloudflare 加 DNS（CNAME `prompt-magic`→`589411.github.io`，DNS only 灰雲）後告知 → 我加 `CNAME` 檔＋push＋Pages 設自訂網域＋等 HTTPS。
+3.（選用）PWA：加到主畫面／離線可開（可用 `pwa-offline` skill）。
+4.（待辦，非本 repo）報名表回覆草稿尚未存檔 → 可存 `ai-family-camp/docs/報名表回覆.md`。
 
 ## 已加功能（2026-06-28 同日）
 - 選項性別均衡：大小孩不再偏男生取向（加魔法少女/偶像/時尚/夢幻/療癒…），分頁改名「大小孩・酷炫奇幻」。
