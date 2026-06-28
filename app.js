@@ -131,12 +131,29 @@ const imgForTags = (tags) => {
   return IMG_BY_TAG["創意"];
 };
 
+// 名畫畫風：本地公共領域名畫，可當成一種畫風加進提示詞（縮圖＝assets/refs/<f>.jpg）
+const ART = [
+  { f: "char", name: { zh: "慕夏新藝術", en: "Mucha Art Nouveau" }, page: "Alfons_Mucha_-_1896_-_Spring.jpg",
+    desc: { zh: "慕夏新藝術風格，柔美線條、花卉藤蔓裝飾、柔和粉彩", en: "Alphonse Mucha art nouveau style, flowing decorative lines, floral ornaments, soft pastel" } },
+  { f: "scenery", name: { zh: "印象派莫內", en: "Monet Impressionism" }, page: "Claude_Monet,_Impression,_soleil_levant.jpg",
+    desc: { zh: "印象派風格，鬆散可見筆觸、柔和霧氣光影", en: "impressionist style, loose visible brushstrokes, soft hazy light" } },
+  { f: "storybook", name: { zh: "點描派秀拉", en: "Seurat Pointillism" }, page: "A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg",
+    desc: { zh: "點描派風格，由無數小色點構成、明亮鮮麗", en: "pointillism style, composed of tiny dots of color, luminous" } },
+  { f: "cinematic", name: { zh: "梵谷星夜", en: "Van Gogh Starry Night" }, page: "Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg",
+    desc: { zh: "梵谷後印象派，漩渦狀厚塗筆觸、流動的夜空", en: "Van Gogh post-impressionist, swirling thick impasto brushstrokes, dynamic sky" } },
+  { f: "fantasy", name: { zh: "波希奇幻", en: "Bosch Surreal" }, page: "The_Garden_of_Earthly_Delights_by_Bosch_High_Resolution.jpg",
+    desc: { zh: "波希奇幻超現實風格，密集細節、怪誕夢境", en: "Hieronymus Bosch surreal fantasy style, densely detailed, dreamlike" } },
+  { f: "product", name: { zh: "維梅爾光影", en: "Vermeer Chiaroscuro" }, page: "1665_Girl_with_a_Pearl_Earring.jpg",
+    desc: { zh: "維梅爾巴洛克，柔和側窗光、深色背景、明暗對比", en: "Vermeer Dutch Golden Age, soft window light, dark background, chiaroscuro" } },
+];
+
 let currentMode = "kid";
 let selectedTemplate = null;   // template 模式：選中的模板物件
 let tplVals = {};              // template 模式：各 {{變數}} 已填的值
 let tplFilter = "全部";        // 模板分類篩選
 let tplSearch = "";            // 模板搜尋字串
 let tplLang = "zh";            // 模板語言：zh | en（提示詞輸出語言）
+let artStyle = null;           // 選用：套用的名畫畫風（ART 物件）
 // 取目前語言的字串：雙語物件 {zh,en} → 取對應語言；純字串原樣回傳
 const pick = (o) => (o && typeof o === "object" && ("zh" in o || "en" in o)) ? (o[tplLang] || o.zh || o.en || "") : (o || "");
 let selections = {}; // 單選欄位的值 {fieldId: value}
@@ -245,10 +262,12 @@ const bankLabel = (v) => (FILL().banks[v] && pick(FILL().banks[v].label)) || v;
 // forPreview=true：未填的空格顯示〔詞庫標籤〕；false：未填的整段拿掉占位、留空
 function assembleTemplate(forPreview) {
   if (!selectedTemplate) return forPreview ? "（先選一個模板…）" : "";
-  return pick(selectedTemplate.content).replace(/\{\{(.+?)\}\}/g, (_, v) => {
+  let s = pick(selectedTemplate.content).replace(/\{\{(.+?)\}\}/g, (_, v) => {
     const val = (tplVals[v] || "").trim();
     return val || (forPreview ? `〔${bankLabel(v)}〕` : "");
   });
+  if (artStyle) s += (tplLang === "en" ? `, in the style of ${pick(artStyle.desc)}` : `，畫風：${pick(artStyle.desc)}`);
+  return s;
 }
 
 function renderTemplateMode(wrap) {
@@ -347,6 +366,27 @@ function renderTemplateMode(wrap) {
         `<figcaption>風格示意：${img.credit} · 公共領域</figcaption>`;
     }
     detail.appendChild(fig);
+
+    // 名畫畫風（選用）：點縮圖把該畫風加進提示詞
+    const ap = document.createElement("div");
+    ap.className = "field";
+    ap.innerHTML = '<label>🎨 套用名畫畫風 <small>（選用，點圖加進提示詞，再點一次取消）</small></label>';
+    const grid = document.createElement("div");
+    grid.className = "art-picker";
+    ART.forEach((a) => {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "art-cell" + (artStyle && artStyle.f === a.f ? " is-on" : "");
+      cell.innerHTML = `<img src="./assets/refs/${a.f}.jpg" alt="${pick(a.name)}" loading="lazy" /><span>${pick(a.name)}</span>`;
+      cell.addEventListener("click", () => {
+        artStyle = (artStyle && artStyle.f === a.f) ? null : a;
+        renderDetail();
+        updatePreview();
+      });
+      grid.appendChild(cell);
+    });
+    ap.appendChild(grid);
+    detail.appendChild(ap);
 
     tplVars(pick(selectedTemplate.content)).forEach((v) => {
       const field = document.createElement("div");
@@ -618,6 +658,7 @@ function resetAll() {
   tplVals = {};
   tplFilter = "全部";
   tplSearch = "";
+  artStyle = null;
   renderForm();
   updatePreview();
   document.getElementById("result").classList.add("hidden");
