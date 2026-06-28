@@ -126,7 +126,7 @@ const MODES = {
         tpl: "{{風格}} 風格的風景畫面，{{場景}}，{{光線}}，{{色調}} 色調，{{鏡頭}} 鏡頭，{{情緒}} 的氛圍，高解析度" },
       { id: "storybook", name: "繪本插畫", cat: "卡通", file: "A_Sunday_on_La_Grande_Jatte,_Georges_Seurat,_1884.jpg", credit: "秀拉《大碗島的星期日午後》· 公共領域",
         tpl: "{{風格}} 風格的童書插畫，{{主體}} 在 {{場景}}，{{情緒}} 氛圍，柔和 {{色調}} 色調，溫暖可愛、適合兒童" },
-      { id: "cinematic", name: "電影感場景", cat: "創意", file: "Wanderer_above_the_Sea_of_Fog.jpg", credit: "弗里德里希《霧海上的旅人》· 公共領域",
+      { id: "cinematic", name: "電影感場景", cat: "創意", file: "Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg", credit: "梵谷《星夜》· 公共領域",
         tpl: "電影感畫面，{{主體}} 置身 {{場景}}，{{光線}}，{{色調}} 色調，{{鏡頭}}，{{情緒}} 氛圍，2.39:1 寬螢幕、film grain、cinematic" },
       { id: "fantasy", name: "奇幻世界", cat: "遊戲", file: "The_Garden_of_Earthly_Delights_by_Bosch_High_Resolution.jpg", credit: "波希《人間樂園》· 公共領域",
         tpl: "{{風格}} 風格的奇幻場景，{{主體}}，{{場景}}，{{光線}}，宏大世界觀，{{情緒}} 的史詩感、豐富細節" },
@@ -282,7 +282,7 @@ function renderTemplateMode(wrap, mode) {
   fig.className = "tpl-figure";
   fig.innerHTML =
     `<a href="${COMMONS_PAGE(selectedTemplate.file)}" target="_blank" rel="noopener">` +
-    `<img src="${COMMONS_IMG(selectedTemplate.file)}" alt="${selectedTemplate.credit}" loading="lazy" referrerpolicy="no-referrer" /></a>` +
+    `<img src="./assets/refs/${selectedTemplate.id}.jpg" alt="${selectedTemplate.credit}" loading="lazy" /></a>` +
     `<figcaption>風格範例：${selectedTemplate.credit}（圖：Wikimedia Commons，點圖看出處）</figcaption>`;
   wrap.appendChild(fig);
 
