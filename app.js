@@ -136,6 +136,9 @@ let selectedTemplate = null;   // template 模式：選中的模板物件
 let tplVals = {};              // template 模式：各 {{變數}} 已填的值
 let tplFilter = "全部";        // 模板分類篩選
 let tplSearch = "";            // 模板搜尋字串
+let tplLang = "zh";            // 模板語言：zh | en（提示詞輸出語言）
+// 取目前語言的字串：雙語物件 {zh,en} → 取對應語言；純字串原樣回傳
+const pick = (o) => (o && typeof o === "object" && ("zh" in o || "en" in o)) ? (o[tplLang] || o.zh || o.en || "") : (o || "");
 let selections = {}; // 單選欄位的值 {fieldId: value}
 
 /* ---------- 動態生成表單 ---------- */
@@ -238,11 +241,11 @@ const tplVars = (tpl) => {
   return set;
 };
 
-const bankLabel = (v) => (FILL().banks[v] && FILL().banks[v].label) || v;
+const bankLabel = (v) => (FILL().banks[v] && pick(FILL().banks[v].label)) || v;
 // forPreview=true：未填的空格顯示〔詞庫標籤〕；false：未填的整段拿掉占位、留空
 function assembleTemplate(forPreview) {
   if (!selectedTemplate) return forPreview ? "（先選一個模板…）" : "";
-  return (selectedTemplate.content || "").replace(/\{\{(.+?)\}\}/g, (_, v) => {
+  return pick(selectedTemplate.content).replace(/\{\{(.+?)\}\}/g, (_, v) => {
     const val = (tplVals[v] || "").trim();
     return val || (forPreview ? `〔${bankLabel(v)}〕` : "");
   });
@@ -252,6 +255,22 @@ function renderTemplateMode(wrap) {
   const FD = FILL();
   const allTags = [];
   FD.templates.forEach((t) => (t.tags || []).forEach((g) => { if (!allTags.includes(g)) allTags.push(g); }));
+
+  // 0) 語言切換（提示詞輸出語言；英文通常生圖品質較好）
+  const lbar = document.createElement("div");
+  lbar.className = "field";
+  lbar.innerHTML = "<label>🌐 提示詞語言</label>";
+  const lchips = document.createElement("div");
+  lchips.className = "chips single";
+  [["zh", "中文"], ["en", "English"]].forEach(([code, name]) => {
+    const c = document.createElement("span");
+    c.className = "chip" + (tplLang === code ? " is-on" : "");
+    c.textContent = name;
+    c.addEventListener("click", () => { tplLang = code; tplVals = {}; renderForm(); updatePreview(); });
+    lchips.appendChild(c);
+  });
+  lbar.appendChild(lchips);
+  wrap.appendChild(lbar);
 
   // 1) 分類篩選
   const fbar = document.createElement("div");
@@ -293,17 +312,17 @@ function renderTemplateMode(wrap) {
   wrap.appendChild(detail);
 
   function refreshList() {
-    const q = tplSearch.trim();
+    const q = tplSearch.trim().toLowerCase();
     const list = FD.templates.filter((t) =>
       (tplFilter === "全部" || (t.tags || []).includes(tplFilter)) &&
-      (!q || t.name.includes(q))
+      (!q || `${t.name.zh || ""} ${t.name.en || ""}`.toLowerCase().includes(q))
     );
     listBox.innerHTML = "";
     if (!list.length) { listBox.innerHTML = '<span class="preview-label">（沒有符合的模板）</span>'; return; }
     list.forEach((t) => {
       const chip = document.createElement("span");
       chip.className = "chip" + (selectedTemplate && selectedTemplate.id === t.id ? " is-on" : "");
-      chip.textContent = t.name + (t.tags && t.tags[0] ? `・${t.tags[0]}` : "");
+      chip.textContent = pick(t.name) + (t.tags && t.tags[0] ? `・${t.tags[0]}` : "");
       chip.addEventListener("click", () => { selectedTemplate = t; tplVals = {}; refreshList(); renderDetail(); updatePreview(); detail.scrollIntoView({ behavior: "smooth", block: "nearest" }); });
       listBox.appendChild(chip);
     });
@@ -321,7 +340,7 @@ function renderTemplateMode(wrap) {
       `<figcaption>風格示意：${img.credit} · 公共領域（點圖看出處）</figcaption>`;
     detail.appendChild(fig);
 
-    tplVars(selectedTemplate.content).forEach((v) => {
+    tplVars(pick(selectedTemplate.content)).forEach((v) => {
       const field = document.createElement("div");
       field.className = "field";
       const label = document.createElement("label");
@@ -342,10 +361,11 @@ function renderTemplateMode(wrap) {
         const chips = document.createElement("div");
         chips.className = "chips";
         opts.forEach((opt) => {
+          const word = pick(opt);
           const chip = document.createElement("span");
           chip.className = "chip";
-          chip.textContent = opt;
-          chip.addEventListener("click", () => { tplVals[v] = opt; input.value = opt; updatePreview(); });
+          chip.textContent = word;
+          chip.addEventListener("click", () => { tplVals[v] = word; input.value = word; updatePreview(); });
           chips.appendChild(chip);
         });
         field.appendChild(chips);
