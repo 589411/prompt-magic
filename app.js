@@ -104,7 +104,7 @@ const MODES = {
     label: "🧩 填空模板",
     title: "選一個模板，把空格填滿",
     previewLabel: "組好的提示詞：",
-    tip: "🧩 篩選分類或搜尋 → 點一個模板 → 填／點詞庫 → 複製提示詞，或交給 AI 潤色。模板與詞庫改編自開源 PromptFill（MIT），已淨化為闔家版；範例圖為公共領域名畫。",
+    tip: "🧩 篩選分類或搜尋 → 點一個模板 → 填／點詞庫（可切中/英）→ 複製提示詞，或交給 AI 潤色。模板、詞庫與範例圖改編自開源 PromptFill（MIT，圖 by @sundyme），已淨化為闔家版。",
     kind: "template",
     summonLabel: "✨ 交給 AI 潤色",
   },
@@ -331,13 +331,21 @@ function renderTemplateMode(wrap) {
   function renderDetail() {
     detail.innerHTML = "";
     if (!selectedTemplate) return;
-    const img = imgForTags(selectedTemplate.tags);
     const fig = document.createElement("figure");
     fig.className = "tpl-figure";
-    fig.innerHTML =
-      `<a href="${COMMONS_PAGE(img.page)}" target="_blank" rel="noopener">` +
-      `<img src="./assets/refs/${img.f}.jpg" alt="${img.credit}" loading="lazy" /></a>` +
-      `<figcaption>風格示意：${img.credit} · 公共領域（點圖看出處）</figcaption>`;
+    if (selectedTemplate.img) {
+      // 每個模板用自己的範例圖（對齊內容，by @sundyme，改編自 PromptFill MIT）
+      fig.innerHTML =
+        `<a href="https://github.com/doggy8088/PromptFill" target="_blank" rel="noopener">` +
+        `<img src="./${selectedTemplate.img}" alt="${pick(selectedTemplate.name)} 範例" loading="lazy" /></a>` +
+        `<figcaption>此模板範例 · 圖 by @sundyme，改編自 PromptFill（MIT）</figcaption>`;
+    } else {
+      const img = imgForTags(selectedTemplate.tags);
+      fig.innerHTML =
+        `<a href="${COMMONS_PAGE(img.page)}" target="_blank" rel="noopener">` +
+        `<img src="./assets/refs/${img.f}.jpg" alt="${img.credit}" loading="lazy" /></a>` +
+        `<figcaption>風格示意：${img.credit} · 公共領域</figcaption>`;
+    }
     detail.appendChild(fig);
 
     tplVars(pick(selectedTemplate.content)).forEach((v) => {
