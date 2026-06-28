@@ -1,5 +1,11 @@
 # STATUS — 魔法詠唱產生器 (prompt-magic)
 
+## 更新（2026-06-28 第二批）
+- ✅ 自訂網域上線：**https://prompt-magic.launchdock.app**（CNAME＋HTTPS 已簽，200）。
+- ✅ 新增第 4 個分頁 **🧩 填空模板**：仿 prompt-fill 的「模板＋{{變數}}＋共享詞庫」，但用站內紫色版型、自家闔家詞庫、名畫預覽圖標公共領域出處、無多奇品牌；可直接複製或交給 AI 潤色。介面靈感註明 PromptFill（MIT）。
+- ✅ 已加入 **lab.launchdock.app**（launchdock-lab `data/projects.yaml`，id=prompt-magic，type=llm-tool；Build&Deploy Action 已成功；封面待 covers 工作流自動截圖）。
+- 註：gh active 帳號平時是 launchdockapp-beep；推 589411 的 repo（prompt-magic / launchdock-lab）需 `gh auth switch --user 589411`，推完切回。
+
 ## 現況（2026-06-28）
 - ✅ Worker 已部署：`https://prompt-magic-worker.589411.workers.dev`（ALLOWED_ORIGIN 已鎖 github.io＋launchdock 子網域，假來源回 403）。
 - ✅ GitHub repo 已建並推送：`589411/prompt-magic`；GitHub Pages 已上線：`https://589411.github.io/prompt-magic/`（HTTP 200）。
